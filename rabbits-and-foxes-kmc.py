@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.19.1
+#       jupytext_version: 1.19.6
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: CHME5137
 #     language: python
-#     name: python3
+#     name: chme5137
 # ---
 
 # %% [markdown]
@@ -119,7 +119,30 @@ plt.show()
 # happens, and how many minutes pass?
 
 # %% [markdown]
-# *Answer:*
+# *Answer:*  I'll just define variables first (mostly for my own sake) and then go stepwise after that... A state **k** would be the given number of rabbits and foxes at a given time. The transition rates **r_ki** would be the rates for each event (total of four: being fox birth, fox death, rabbit birth, rabbit death). The cumulative function **R_ki** is the summation of all the individual rates up to and including a given point "i". This is related to the total sum of all rates (fully going to the end), which would be **Q_k** (sum of all the rates, think of numberline shown on blackboard in class). **u** is a random number generated between zero and one, which is used to choose which event happens (points to which event on the numberline), with **u'** being used for the next time step (deltaT = ln(1/u') / Q_k).
+#
+# Stepwise starting from the top: 
+#
+# 1. time = 0, get an initial state k (400 rabbits, 200 foxes)
+# 2. get starting rates **r_ki** from 1 to 4: (k_1*R, k_2*R*F, k_3*R*F, k_4*F) resulting in (0.015*400) , (0.00004*200*400) , (0.0004*200*400) , (0.04*200)
+# 3. **R_k1** = (0.015*400), **R_k2** = (0.00004*200*400) + **R_k1**, **R_k3** = (0.0004*200*400) + **R_k2**, **R_k4** = (0.04*200) + **R_k3** and thus **Q_k** = **R_k4** = 49.2 events/day
+# 4. A uniform random number **u** is drawn from (0,1] and then is multiplied by **Q_k**, that result is then the event that lands on (numberline) is carried out
+# 5. a new random uniform number is drawn **u'**, and the time step is calculated by ln(1/u') / (Q_k). this is then added with t_current = t + deltaT
+# 6. This is then repeated (loop back to step 2), with new rates being calclated based on the new environment since the last event was carried out
+#
+#
+# working out by hand:
+#
+# **R_k1** = 6
+# **R_k2** = 9.2
+# **R_k3** = 41.2
+# **R_k4** = 49.2
+# **Q_k** = 49.2 (see above, events/day)
+#
+# if **u** = 0.5, then **Q_k** * (u = 0.5) = 24.6, which is **R_k2** (9.2) < 24.6 < **R_k3** (41.2), so the event is that a fox is born (event 3). So the next state is (400,201)
+#
+# with **u'** = 0.3, the time step is = ln(1/0.3) / 49.2 = ~0.0245 days which is 35.28 minutes
+#
 
 # %% [markdown]
 # **(b) The function.** Write
@@ -139,9 +162,57 @@ plt.show()
 # with different seeds. How does a KMC trajectory differ from the ODE solution?
 
 # %%
+rng = np.random.default_rng(67)
+def kmc(R0, F0, t_end, rng):
+    t=0.0
+    R,F = R0, F0
+    times = [t]
+    rabbits = [R]
+    foxes = [F]
+    while t < t_end:
+        r = np.array([k1*R, k2*R*F, k3*R*F, k4*F])
+        R_tot = np.cumsum(r)
+        Q = R_tot[-1]
+        if Q == 0:
+            break
+        u = rng.random()
+        i = np.searchsorted(R_tot, u*Q)
+        if i == 0:
+            R+= 1
+        elif i ==1:
+            R -= 1
+        elif i ==2:
+            F += 1
+        elif i ==3:
+            F -= 1
+        else:
+            raise ValueError(f"unknown event index {i}")
+        if R < 0 or F < 0:
+            raise ValueError(f"negative population: R={R}, F={F}, t={t}")
+        u2 = rng.random()
+        t += (np.log(1/u2)) / Q
+        times.append(t)
+        rabbits.append(R)
+        foxes.append(F)
+    return np.array(times), np.array(rabbits), np.array(foxes)
+
+start = time.perf_counter()
+times, rabbits, foxes = kmc(R0, F0, t_end, rng)
+print(len(times) - 1, "events in", round(time.perf_counter() - start, 2), "s")
+
+plt.figure()
+plt.plot(t_ode, R_ode, label="rabbits (ODE)")
+plt.plot(t_ode, F_ode, label="foxes (ODE)")
+plt.xlabel("time (days)")
+plt.ylabel("population")
+
+plt.step(times, rabbits, where="post", label="rabbits (KMC)")
+plt.step(times, foxes, where="post", label="foxes (KMC)")
+plt.legend()
+
 
 # %% [markdown]
-# *Answer:*
+# *Answer:* The KMC differs from the ODE after the about day 200, where the KMC never has a rebound in the fox population (presumably the r_foxborn decreases and it is not a statistically likely event that they will get out of an extinction vortex situation within the populations, therefore rabbit population increases exponentially with no predator there). There were 23462 events in 0.24s (see above in output line)
 
 # %% [markdown]
 # ## 2. Many trajectories, and where they end up
@@ -268,3 +339,5 @@ plt.show()
 # Restart & Run All. Check that every cell ran, in order, with no errors. Commit and
 # push. Then check on GitHub that your fork shows your latest commit, and that the
 # notebook displays with its plots.
+
+# %%
