@@ -387,7 +387,11 @@ for N in N_list:
               f"median {np.median(x):.1f}, IQR {q25:.1f} to {q75:.1f}")
 
 # %% [markdown]
-# *Answer:*
+# *Answer:* means wrt N: (397.0, 400.4, 403.6, 400.0 days ) for N = 100,300,100,3000... there doesn;t seem to be a trend but it does settle at 400 days. (2527,2489,2404,2363 foxes) for N = 100,300,1000,3000. Some downwards driting but all within SE of N = 3000 run so it doesn;t seem of note. The fraction of second peaks continuously drifts upwards from 0.220 to 0.318. The SE decrease a lot as N is increased, SD stays pretty similar throughout. SE sclaes as 1/sqrt(# of peaks), so more peaks, more precise. 
+#
+# Expected values: 400 +/- 1 days , 2360 +/- 20 foxes. Precision is less-so than the actual N=3000 because the values have not converged yet, so "ones place" sig fig was dropped and the SE rounded up. 
+#
+# IQR: time 380 to 420 days and height 1940 to 2690 foxes. The IQR range was done conservitavely with a similar thought ptocess to the expected values, where most precise whole digit dropped due to lack of conversion and fluctuations from previous runs
 
 # %% [markdown]
 # ## 5. How likely is it that the foxes die out?
