@@ -227,9 +227,30 @@ plt.legend()
 #   task 5 of the `solve_ivp` homework is relevant.)
 
 # %%
+rng = np.random.default_rng(67)
+plt.figure()
+for n in range(20):
+    times, rabbits, foxes = kmc(R0, F0, t_end, rng)
+    plt.step(times, foxes, where="post", lw=0.5)
+plt.plot(t_ode, F_ode, label='ODE', lw=2)
+plt.xlabel('time (days')
+plt.ylabel('population')
+plt.legend()
+plt.title('Foxes')
+
+plt.figure()
+for n in range(20):
+    times, rabbits, foxes = kmc(R0, F0, t_end, rng)
+    plt.step(times, rabbits, where="post", lw=0.5)
+plt.plot(t_ode, R_ode, label = 'ODE', lw = 2)
+plt.xlabel('time (days')
+plt.ylabel('population')
+plt.legend()
+plt.title('Rabbits')
+
 
 # %% [markdown]
-# *Answer:*
+# *Answer:* The trajectories start out very similar to one another at times < ~250 days. There is a large differential after that due to small numbers of foxes being present, so extinction becomes the most likely outcome, and the fox population rebounding is less likely event. The trajectory at F=0 or R=0 will never rebound, because in the equations for new animals, if either are zero, then the r_newfox = 0, and r_newrabbit = 0, meaning this equation takes into account that you cannot create an animal from nothing (fox birth = k3RF, fox death = k4F, rabbits death = k2FR all become zero when F = 0, but not rabbit birth, which is k1R and not coupled to fox populations resulting in exponential rise of rabbit population when no foxes). The foxes are most likely to die out in the fox "trough" at around the same amount of time as listed before (~250 - 300 days), where the fox_min is ~1.59 foxes. With such minimal fox(es) left, a short run of deaths with no births wipes them all out of the picture
 
 # %% [markdown]
 # ## 3. The second fox peak
