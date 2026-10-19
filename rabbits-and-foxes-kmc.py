@@ -274,8 +274,77 @@ plt.title('Rabbits')
 
 # %%
 
+
+def second_peak(times, foxes):
+    in_window = (times >= 200) & (times <= 600)
+    t_win = times[in_window]
+    f_win = foxes[in_window]
+    if len(t_win) ==  0:
+        return None
+    j = np.argmax(f_win)
+    t_peak = t_win[j]
+    f_peak = f_win[j]
+    if f_peak > 100 and 205 < t_peak < 595:
+        return t_peak, f_peak
+    return None
+
+runs = []
+start = time.perf_counter()
+rng = np.random.default_rng(67)
+peak_times, peak_heights = [], []
+for n in range(100):
+    times, rabbits, foxes = kmc(R0, F0, t_end, rng)
+    peak = second_peak(times, foxes)
+    if peak is not None:
+        peak_times.append(peak[0])
+        peak_heights.append(peak[1])
+    runs.append((times, foxes))
+elapsed = time.perf_counter()-start
+print(f"100 runs took {elapsed:.1f} s")
+
+N = 100
+peak_times = np.array(peak_times)
+peak_heights = np.array(peak_heights)
+
+print(f"second peak in {len(peak_times)} of {N} runs, fraction {len(peak_times) / N:.2f}")
+
+for name, x in [("time (days)", peak_times), ("height (foxes)", peak_heights)]:
+    q25, q75 = np.percentile(x, [25,75])
+    print(f"{name}: mean {x.mean():.1f}, median {np.median(x):.1f}, "
+          f"IQR {q25:.1f} to {q75:.1f}")
+plt.hist(peak_times, bins = 15)
+plt.axvline(428, color='k', ls='--', label = 'ODE')
+plt.xlabel('second peak time (days)')
+plt.ylabel('number of runs')
+plt.legend()
+plt.show()
+
+plt.hist(peak_heights, bins=15)
+plt.axvline(2804, color="k", ls="--", label="ODE")
+plt.xlabel("second-peak height (foxes)")
+plt.ylabel("number of runs")
+plt.legend()
+plt.show()
+
+##seeing second peak after 595 days, claude 
+
+for n, (times, foxes) in enumerate(runs):
+    w = (times >= 200) & (times <= 600)
+    if not w.any():
+        continue                              # run stopped before day 200
+    j = np.argmax(foxes[w])
+    t_max, f_max = times[w][j], foxes[w][j]
+    if t_max >= 595 and f_max > 100:
+        print(f"run {n}: max {f_max} foxes at day {t_max:.1f} -> second_peak = {second_peak(times, foxes)}")
+
 # %% [markdown]
-# *Answer:*
+# *Answer:* There is a second peak in 22/100 (0.22) of the trajectories. 
+#
+# (copied from above) : 
+# {time (days): mean 397.0, median 388.5, IQR 380.9 to 420.2} and {
+# height (foxes): mean 2526.7, median 2395.5, IQR 2089.2 to 2855.}.
+#
+# Comparing second peak position (days) of ODE (428 days) to the KMC trajectories that have a second peak, the mean, median, and entire IQR is outside of the ODE value (75% quartile is 420 days, still below the 428 day ODE). Comparing second peak height (in foxes) of ODE (2804 foxes) to the KMC trajectories that had a second peak, it is within the IQR (2089 to 2855) but just barely, and significantly higher than the KMC mean and medians. The KMC second peaks tend to be earlier and lower in amplitude. They differ because of 1) the set used for the KMC is only the ones that had a second peak, which is much less than the 100 trajectories when starting off with 2) late peaks (day 595 and after) are not included in the analysis so it would naturally shift the data slightly "early" if there were late ones not included 3) noise in KMC itself with the by definition randomness/noisiness of how its points are generated. The definition of a peak is faulty due to this arbitraty cutoff of anything within 5 days of 600 days has to be thrown out, as well as the 100 fox threshold. I couldn;t find any runs that peaked after 595 days in my current rng seed but I'm sure it's possible.0
 
 # %% [markdown]
 # ## 4. How many runs are enough?
@@ -292,6 +361,30 @@ plt.title('Rabbits')
 #   ranges, to a precision you can justify. Say how you justified it.
 
 # %%
+N_list = [100,300,1000,3000]
+results = {}
+
+for N in N_list:
+    rng = np.random.default_rng(67)
+    peak_times, peak_heights = [],[]
+    start = time.perf_counter()
+    for n in range(N):
+        times, rabbits, foxes = kmc(R0, F0, t_end, rng)
+        peak = second_peak(times, foxes)
+        if peak is not None:
+            peak_times.append(peak[0])
+            peak_heights.append(peak[1])
+    elapsed_N = time.perf_counter() - start
+    peak_times_array, peak_heights_array = np.array(peak_times), np.array(peak_heights)
+    n_peak = len(peak_times_array)
+    results[N] = (peak_times_array, peak_heights_array)
+    print(f"N = {N}: {elapsed_N:.0f} s, second peak in {n_peak} runs ({n_peak / N:.3f})")
+    for name, x in [("time (days)", peak_times_array), ("height (foxes)", peak_heights_array)]:
+        s = x.std(ddof=1)                     # sample standard deviation
+        se = s / np.sqrt(n_peak)              # standard error of the mean
+        q25, q75 = np.percentile(x, [25, 75])
+        print(f"   {name}: mean {x.mean():.1f} ± {se:.1f} (SE), sd {s:.1f}, "
+              f"median {np.median(x):.1f}, IQR {q25:.1f} to {q75:.1f}")
 
 # %% [markdown]
 # *Answer:*
