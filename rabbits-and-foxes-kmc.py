@@ -453,7 +453,7 @@ plt.show()
 # good enough?
 
 # %% [markdown]
-# *Answer:*
+# *Answer:* In my project I am using monte carlo to build a worm like chain builder (DFT torsional energy values of each possible conformation with and without explicit solvents, then RIS theory, then MC chain builder off of the Boltzmann energy probabilities of each conformation). The MC underepresents a certain defect that has been hypothesized (a cis-amide) that is a high energy state, but my DFT has shown that to be not likely enough to occur within the temperature range of interest so I took it out of the model. The rates for that are super low (deltaE very hight compared to a trans-amide state). A continuum model in this context would be fixed torsion angles for each monomer, which would ignore the "valleys" in the torsional energy wells and would essentially negatate thermal fluctuations within the snapshot. I took this chain builder model (it matches literature persistance lengths, radius of gyration) and have since used it to model (course grained) chain alignment of up to 150 chains under different shear rates which is important for kevlar processing in liquid crystal env.
 
 # %% [markdown]
 # ## Stretch problems
