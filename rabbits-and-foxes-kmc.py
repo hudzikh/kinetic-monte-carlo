@@ -407,9 +407,40 @@ for N in N_list:
 #   happen?
 
 # %%
+N = 3000
+rng = np.random.default_rng()
+extinct_times = []
+start = time.perf_counter()
+for n in range(N):
+    times, rabbits, foxes = kmc(R0, F0, t_end, rng)
+    F_600 = foxes[times <= 600][-1]
+    if F_600 ==0:
+        extinct_times.append(times[np.argmax(foxes==0)])
+print(f"{N} runs took {time.perf_counter() - start:.0f} s")
+
+extinct_times = np.array(extinct_times)
+p = len(extinct_times) / N
+se = np.sqrt(p* (1-p) / N)
+print(f"foxes extinct by day 600 in {len(extinct_times)} of {N} runs")
+print(f"P = {p:.3f} ± {se:.3f} (SE)")
+for target in (0.01, 0.001):
+    print(f"runs needed for SE = {target}: {p * (1 - p) / target**2:.0f}")
+
+plt.hist(extinct_times, bins=40)
+plt.axvline(297.6, color="k", ls="--", label="ODE fox minimum (day 297.6)")
+plt.xlabel("time foxes die out (days)")
+plt.ylabel("number of runs")
+plt.legend()
+plt.show()
 
 # %% [markdown]
-# *Answer:*
+# *Answer:* Prob of foxes dying out before day 600 is 0.682 +/- 0.009, I would round up a bit and say 68% +/- 1% probability of extinction.
+#
+# 2170 runs needed for 0.01 (1%), 216997 needed for 0.001 (0.1%)
+#
+# It (the foxes dying out) usually happens at day ~260 (between 250 and 275 days).
+#
+#
 
 # %% [markdown]
 # ## 6. Your project
